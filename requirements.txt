@@ -1,0 +1,29 @@
+# Entorno de trabajo - Tesis Deserción Estudiantil UNAJ
+# Ver protocolo: DOCUMENTOS ELABORADOS DE LA TESIS/Protocolo de Investigacion v1.md (§10)
+
+# Adquisición y EDA (Fase 2)
+ucimlrepo
+pandas
+numpy
+matplotlib
+seaborn
+
+# Preprocesamiento (Fase 3)
+scikit-learn
+imbalanced-learn
+
+# Entrenamiento (Fase 4)
+xgboost
+lightgbm
+optuna
+
+# Validación y análisis estadístico (Fase 6)
+scipy
+scikit-posthocs
+
+# Interpretabilidad (Fase 6)
+shap
+
+# Entorno de notebooks
+jupyter
+ipykernel

@@ -1,0 +1,26 @@
+# Documentos de tesis (uso exclusivo local, según README.me de la carpeta)
+DOCUMENTOS ELABORADOS DE LA TESIS/
+
+# Datos (el dataset crudo/procesado no se versiona; se regenera con el notebook de adquisición)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Entorno Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Artefactos de modelos entrenados (pesos, checkpoints) — no versionar binarios grandes
+*.pkl
+*.joblib
+*.h5
+
+# Sistema
+.DS_Store
+Thumbs.db
