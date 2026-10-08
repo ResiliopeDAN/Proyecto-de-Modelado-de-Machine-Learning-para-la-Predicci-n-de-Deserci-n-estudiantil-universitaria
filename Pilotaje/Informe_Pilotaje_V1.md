@@ -277,10 +277,9 @@ Tres incidencias reales, encontradas al ejecutar (no al redactar), registradas e
 El Protocolo v2.1 §10 declara "PC de escritorio (Windows 10) en local, con conda/venv
 dedicado". El piloto se ejecutó en una laptop con Arch Linux. **Tipo:** metodológica.
 **¿Afecta validez?** Sí, en el sentido de que el protocolo describe un entorno que no es
-el que efectivamente se usó. **Decisión (tomada): Corregir** — declarar ambos entornos
-(Windows 10 y Arch Linux) en el §10 del Protocolo v2.2. **Ejecución agendada** antes de
-Fase 3: correr el mismo piloto en la PC de escritorio (Windows 10, carpeta
-`escritorio_windows10/`, todavía no corrida) para confirmar paridad de resultados.
+el que efectivamente se usó. **Decisión (tomada y ejecutada): Corregir** — declarar ambos entornos
+(Windows 10 y Arch Linux) en el §10 del Protocolo v2.2. 
+*Actualización (2026-10-08):* Piloto ejecutado en la PC de escritorio (Windows 10, carpeta `escritorio_windows10/`), confirmando paridad exacta de métricas con Arch Linux. **INC-01 Cerrada.**
 
 ### INC-02 — El dataset trae 36 variables predictoras, no 35
 
