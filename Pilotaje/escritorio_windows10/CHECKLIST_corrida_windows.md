@@ -47,6 +47,31 @@ pip freeze > Pilotaje\escritorio_windows10\requirements_lock.txt
 > `pip install -r Pilotaje\laptop_arch_linux\requirements_lock.txt`
 > (algún paquete con wheel solo-Linux podría fallar; si pasa, vuelve a `requirements.txt`).
 
+## 1b. Fix del certificado SSL (INC-04) — el correcto, con verificación ACTIVADA
+
+`ucimlrepo` descarga con `urllib.request.urlopen(..., context=ssl.create_default_context(cafile=certifi.where()))`,
+es decir **ya usa `certifi` con verificación SSL encendida**. El error `CERTIFICATE_VERIFY_FAILED`
+que apareció en la primera corrida fue porque el *bundle* de `certifi` estaba desactualizado.
+El fix correcto es actualizarlo (NO desactivar la verificación):
+
+```powershell
+pip install --upgrade certifi
+```
+
+- [ ] `certifi` actualizado a la última versión.
+- [ ] **Eliminar el workaround inseguro** si quedó de la corrida anterior:
+      borra `.venv\Lib\site-packages\sitecustomize.py` (desactivaba la verificación SSL de todo
+      el entorno). Con `certifi` al día ya no hace falta.
+
+```powershell
+Remove-Item ".venv\Lib\site-packages\sitecustomize.py" -ErrorAction SilentlyContinue
+```
+
+> Nota: como el contexto fija `cafile=certifi.where()`, la variable `SSL_CERT_FILE` **no tiene
+> efecto** aquí — el único lever real es la versión de `certifi`. Si tras actualizar aún
+> fallara, la causa sería externa (reloj del sistema desfasado, o un antivirus/proxy que
+> intercepta TLS), no el proyecto.
+
 ## 2. Pre-vuelo de portabilidad (evita que un notebook reviente a mitad)
 
 - [ ] Verifica que **ningún notebook use el módulo `resource`** (es solo Unix; en Windows

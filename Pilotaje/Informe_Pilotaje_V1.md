@@ -10,8 +10,15 @@
 | **Protocolo a ejecutar** | v2.1 (`DOCUMENTOS ELABORADOS DE LA TESIS/Protocolo de Investigacion v2.1.md`) |
 | **Fecha de ejecución** | 2026-10-04 |
 | **Docente** | Dra. Liz Huancapaza Hilasaca — Seminario de Tesis II, 2026-II |
-| **Entorno de ejecución** | laptop (Arch Linux) — ver `laptop_arch_linux/entorno_ejecucion.md` |
-| **Semáforo del piloto** | 🟡 **AMARILLO** |
+| **Entornos de ejecución** | laptop (Arch Linux) + PC escritorio (Windows 10) — ver `laptop_arch_linux/` y `escritorio_windows10/entorno_ejecucion.md` |
+| **Semáforo del piloto** | 🟡 AMARILLO → 🟢 **VERDE** (ver nota) |
+
+> **Nota sobre el semáforo.** El piloto *resultó* 🟡 **AMARILLO** porque detectó incidencias
+> que requerían corrección antes de la ejecución definitiva (su función como piloto). Una vez
+> **corregidas y verificadas** —v2.2 emitida (INC-02), paridad de métricas confirmada en los
+> dos entornos (INC-01), e incidencias técnicas sin impacto en validez (INC-03, INC-04)— el
+> piloto pasa a 🟢 **VERDE**: el flujo se ejecutó, la evidencia es utilizable y trazable, y el
+> protocolo queda listo para la ejecución sistemática de Semana 5.
 
 > **Nota sobre el versionado del protocolo.** La ficha del curso nombra las versiones
 > como "V1.1 → V1.2". Este proyecto usa su propio esquema de versionado semántico: la
@@ -27,6 +34,9 @@
 - `incidencias_log.csv` + `INC-02_discrepancia_variables.md` — incidencias detectadas.
 - `laptop_arch_linux/bitacora_ejecucion.csv` — bitácora completa, generada automáticamente.
 - `laptop_arch_linux/evidencias/` — todos los archivos de evidencia citados en este informe.
+- `comparacion_entornos.md` — verificación de paridad de resultados entre Arch Linux y
+  Windows 10 (cierre de INC-01) y manejo del incidente SSL (INC-04).
+- `escritorio_windows10/` — bitácora, entorno y evidencias de la corrida de verificación en Windows.
 
 ---
 
@@ -69,9 +79,9 @@ al cerrar el Protocolo v2.1 (seción de antecedentes, abajo).
 
 ## B. Versión y parte del protocolo probada
 
-**Versión probada:** Protocolo v2.1 (la versión vigente; no existe una versión posterior
-específica para el piloto — ver sección G sobre por qué el protocolo no cambia de
-versión a raíz de este piloto).
+**Versión probada:** Protocolo v2.1 (la versión vigente al momento de ejecutar el piloto).
+A raíz de las incidencias detectadas, el piloto dio lugar al **Protocolo v2.2** con dos
+correcciones de documentación (§5 y §10) — ver secciones F y G.
 
 ### Matriz de cobertura — qué partes del protocolo se ejercitaron
 
@@ -269,8 +279,9 @@ ventaja estructural sobre un modelo lineal en una muestra chica — la comparaci
 
 ## E. Incidencias y análisis
 
-Tres incidencias reales, encontradas al ejecutar (no al redactar), registradas en
-`incidencias_log.csv`:
+Cuatro incidencias reales, encontradas al ejecutar (no al redactar), registradas en
+`incidencias_log.csv`. Las tres primeras surgieron en la corrida de la laptop (Arch Linux);
+la cuarta, en la corrida de verificación en Windows 10:
 
 ### INC-01 — Entorno de cómputo no coincide con el protocolo
 
@@ -303,10 +314,11 @@ forma confiable la tabla de variables del PDF original.
 
 **¿Afecta validez?** Sí, en el sentido de que la ficha técnica documentada no coincide
 con los datos reales usados — es exactamente el tipo de observación que un jurado podría
-hacer en la defensa si se detecta tarde. **Decisión (tomada): Corregir** — actualizar el
-§5 de 35 a 36 variables y emitir el Protocolo v2.2 (según la regla de versionado P15).
-**Ejecución agendada** antes de Fase 3. No afecta el piloto en sí: el pipeline ya usa las
-36 variables reales, independientemente de lo que diga el §5.
+hacer en la defensa si se detecta tarde. **Decisión (tomada y ejecutada): Corregir** —
+actualizar el §5 de 35 a 36 variables y emitir el Protocolo v2.2 (según la regla de
+versionado P15). *Actualización (2026-10-08):* **Protocolo v2.2 emitido** con el §5
+corregido a 36 variables. **INC-02 cerrada.** No afectó el piloto en sí: el pipeline ya
+usaba las 36 variables reales, independientemente de lo que dijera el §5.
 
 ### INC-03 — El entorno Linux obliga a usar un entorno virtual
 
@@ -316,6 +328,44 @@ Arch Linux bloquea `pip install` a nivel de sistema (PEP 668,
 todas formas ya exigía el Protocolo v2.1 §10 ("conda/venv dedicado") — no requirió
 cambiar nada del protocolo, solo confirmó que el venv no es opcional en este entorno.
 Resuelta en el momento.
+
+### INC-04 — Fallo de certificado SSL al descargar el dataset en Windows
+
+Al correr `01_Adquisicion_EDA.ipynb` en la PC de escritorio (Windows 10, Python 3.13.1),
+la descarga vía `ucimlrepo` falló con `SSL: CERTIFICATE_VERIFY_FAILED`. **Tipo:** técnica
+(de infraestructura, no del protocolo ni del código). **Evidencia:** `comparacion_entornos.md`.
+
+**Causa raíz:** `ucimlrepo` descarga con
+`urllib.request.urlopen(..., context=ssl.create_default_context(cafile=certifi.where()))`
+— es decir, **ya valida el certificado usando el *bundle* de `certifi`**. El fallo ocurrió
+porque ese *bundle* de `certifi` estaba **desactualizado** en la instalación de Windows
+(no traía la CA del servidor de UCI). No es un problema del protocolo ni del código del proyecto.
+
+**Cómo se abordó (workaround de infraestructura):** se creó un `sitecustomize.py` dentro
+del `.venv` que fuerza `ssl._create_unverified_context()` para todo el entorno, evitando
+tocar los notebooks oficiales. Permitió completar la descarga.
+
+**Limitaciones de ese workaround (declaradas con honestidad):**
+- Desactiva la verificación de certificados en *todo* el entorno; es aceptable para una
+  descarga puntual de un dataset público, pero **no es una práctica recomendable** como
+  solución permanente.
+- El `sitecustomize.py` vive dentro de `.venv/`, que **no se versiona** (`.gitignore`);
+  por tanto el parche **no es reproducible** desde el repositorio: una clonación limpia en
+  otra máquina Windows volvería a encontrar el mismo error.
+
+**Fix correcto (implementado y versionado):** como la librería ya usa `certifi.where()`, basta
+**actualizar el *bundle*** con `pip install --upgrade certifi` — la descarga funciona **con la
+verificación SSL activada**, sin tocar notebooks. Se agregó `certifi` explícito a
+`requirements.txt` para dejar la dependencia versionada. Queda **una acción manual en la PC
+Windows** (correr el `upgrade` y borrar el `sitecustomize.py`), documentada en
+`escritorio_windows10/CHECKLIST_corrida_windows.md` (paso 1b). (`SSL_CERT_FILE` no aplica:
+el contexto fija `cafile=certifi.where()` e ignora esa variable.)
+
+**¿Afecta validez?** **No.** La verificación apagada no altera *qué* se descargó: el
+`dataset_audit.csv` del entorno Windows reportó las mismas 36 variables y 4,424 filas que
+la referencia UCI, y **todas las métricas de test coincidieron exactamente** con las de la
+laptop (ver sección D.3 y `comparacion_entornos.md`). Es decir, se descargó el dataset
+auténtico; el incidente es de infraestructura de red, no de integridad de datos.
 
 ---
 
@@ -334,9 +384,12 @@ se agenda es la *ejecución* de cada acción, no la decisión en sí):
 | Pipeline de preprocesamiento: `StandardScaler` + `SMOTE` **solo sobre train** | ☑ **Mantener** | Verificado sin fuga de datos; métricas consistentes con la literatura del dataset (benchmark F1≈0.904, Romero et al. 2025). | Ninguna. | §11 (P05) |
 | Recall de *Dropout* como criterio de desempate entre modelos | ☑ **Mantener** | El baseline alcanzó recall 0.900 en test; la métrica prioriza correctamente detectar al que deserta. | Ninguna. | §7 |
 
-> **Decisión tomada ≠ ejecución completada.** Las dos correcciones (§5 y §10) están
-> **decididas** con justificación y sección identificada; su ejecución (emitir el documento
-> v2.2 y correr el entorno Windows) está agendada **antes de Fase 3 / Semana 5**. Ver
+> **Estado de ejecución de las decisiones (2026-10-08): completado.** Las dos correcciones
+> ya no están solo decididas, sino **ejecutadas**: (a) el **Protocolo v2.2 fue emitido** con
+> el §5 a 36 variables y el §10 con ambos entornos declarados; (b) el piloto **se corrió en
+> Windows 10** y confirmó **paridad exacta de métricas** con Arch Linux (ver
+> `comparacion_entornos.md`). Queda un único cabo técnico menor (no bloqueante): aplicar el
+> fix versionable del certificado SSL en Windows (`certifi`, INC-04) antes de Fase 3. Ver
 > sección G para el estado formal del documento del protocolo.
 
 ### Registro de cambios de preparación
@@ -389,11 +442,13 @@ cuándo y por qué").
 | §5 | 35 variables predictoras | **36 variables predictoras** | INC-02 |
 | §10 | Entorno: Windows 10 | **Windows 10 y Arch Linux** (ambos declarados) | INC-01 |
 
-**Estado de emisión del documento v2.2:** las correcciones están **decididas y
-especificadas** (arriba); la emisión del archivo `Protocolo de Investigacion v2.2.md` y la
-corrida de confirmación en Windows están agendadas **antes de Fase 3 / Semana 5**. Nada de
-esto bloquea continuar con el EDA formal de Fase 2 mientras tanto, pero debe cerrarse antes
-de congelar la partición oficial 70/15/15.
+**Estado de emisión del documento v2.2 (2026-10-08): EMITIDO.** El archivo
+`Protocolo de Investigacion v2.2.md` ya está generado con ambas correcciones aplicadas, y
+la corrida de confirmación en Windows 10 se ejecutó con paridad exacta de métricas
+(`comparacion_entornos.md`). El protocolo v2.2 es la versión vigente para la ejecución
+sistemática de Fase 3 en adelante. (Nota: el documento v2.2 vive en
+`DOCUMENTOS ELABORADOS DE LA TESIS/`, carpeta de uso local no versionada en el repositorio
+por decisión de privacidad del proyecto.)
 
 ---
 
@@ -417,10 +472,15 @@ La cadena es reconstruible sin ambigüedad, de punta a punta.
 
 ## I. Semáforo y síntesis
 
-**Semáforo: 🟡 AMARILLO** — el pipeline corrió limpio (0 errores en las 4 notebooks, 10
-pasos de bitácora todos en "OK"), pero quedan 2 incidencias reales sin resolver que tocan
-la ficha técnica del protocolo (INC-01, INC-02): se ejecutó, pero requiere correcciones
-antes de la ejecución definitiva. No es rojo porque ninguna incidencia impide continuar.
+**Semáforo: 🟡 AMARILLO → 🟢 VERDE.** El *resultado del piloto* fue 🟡 **AMARILLO**: el
+pipeline corrió limpio (0 errores en las 4 notebooks, 10 pasos de bitácora todos en "OK"),
+pero detectó 2 incidencias reales que tocaban la ficha técnica del protocolo (INC-01,
+INC-02) y requerían corrección antes de la ejecución definitiva. **Esas correcciones ya se
+aplicaron y verificaron** (v2.2 emitida; paridad de métricas confirmada en Windows 10), y
+las incidencias técnicas restantes (INC-03, INC-04) no afectan la validez — por lo que el
+piloto **cierra en 🟢 VERDE**: el flujo se ejecutó, la evidencia es utilizable y trazable,
+y el protocolo queda listo para la ejecución sistemática de Semana 5. Nunca estuvo en rojo:
+ninguna incidencia impidió continuar.
 
 Las 12 preguntas de síntesis completas están en la Sección 9 de
 `01_Adquisicion_EDA.ipynb` (reproducidas aquí de forma resumida):
@@ -438,11 +498,12 @@ Las 12 preguntas de síntesis completas están en la Sección 9 de
    no de calidad.
 6. **¿Las métricas se pudieron aplicar?** Sí, sin problema, con las librerías estándar.
 7. **¿Riesgo de fuga/sesgo?** No detectado — SMOTE solo en train, verificado.
-8. **Qué definir mejor:** resolver INC-01 e INC-02 antes de Fase 3.
+8. **Qué definir mejor:** INC-01 e INC-02 ya resueltas (v2.2 + corrida Windows); queda
+   aplicar el fix versionable del certificado SSL (`certifi`, INC-04) antes de Fase 3.
 9. **Qué no debe cambiar:** la partición 70/15/15 con seed=42, y el recall de Dropout
    como criterio de desempate.
-10. **Qué preguntaría otra persona:** solo el estado de INC-01/INC-02 — el resto es
-    reproducible sin preguntas.
+10. **Qué preguntaría otra persona:** cómo reproducir la descarga en Windows sin el parche
+    SSL del venv (respuesta: aplicar `certifi`, INC-04); el resto es reproducible sin preguntas.
 11. **Error que pudo haber comprometido la tesis si se detectaba después:** INC-02.
 12. **¿El cronograma sigue viable?** Sí, sin mover fechas; se agrega una micro-tarea
     antes de Fase 3.
@@ -451,15 +512,25 @@ Las 12 preguntas de síntesis completas están en la Sección 9 de
 
 ## Conclusión y próximos pasos
 
-El piloto demuestra que el Protocolo v2.1 es ejecutable de punta a punta — adquisición,
-auditoría, partición, preprocesamiento, entrenamiento (2 algoritmos) y evaluación final
-sobre test — con evidencia trazable y reconstruible en cada paso. Encontró dos
-incidencias reales (una metodológica, una técnica/de documentación) antes de que fueran
-costosas, que es precisamente el objetivo de un piloto.
+El piloto demuestra que el Protocolo (v2.1 → v2.2) es ejecutable de punta a punta —
+adquisición, auditoría, partición, preprocesamiento, entrenamiento (2 algoritmos) y
+evaluación final sobre test — con evidencia trazable y reconstruible en cada paso, **y
+reproducible en dos entornos operativos distintos** (Arch Linux y Windows 10) con paridad
+exacta de métricas. Encontró cuatro incidencias reales antes de que fueran costosas, que es
+precisamente el objetivo de un piloto, y las cerró.
 
-**Antes de Fase 3 (semana 5)** — ejecutar las decisiones ya tomadas en la Etapa F:
-1. **INC-01:** declarar ambos entornos (Windows 10 + Arch Linux) en el §10 y correr el
-   mismo piloto en `escritorio_windows10/` para confirmar paridad.
-2. **INC-02:** actualizar el §5 de 35 a 36 variables y **emitir el Protocolo v2.2**
-   (= "V1.2" de la ficha), que recoge ambas correcciones.
-3. Nada de esto bloquea continuar con el EDA formal de Fase 2 mientras tanto.
+**Estado de cierre (2026-10-08):**
+1. **INC-01:** ✅ cerrada — ambos entornos declarados en el §10 (v2.2) y paridad confirmada
+   en Windows 10.
+2. **INC-02:** ✅ cerrada — §5 corregido a 36 variables; **Protocolo v2.2 emitido**
+   (= "V1.2" de la ficha).
+3. **INC-03:** ✅ resuelta en el momento (venv obligatorio en Arch Linux).
+4. **INC-04:** ✅ fix correcto implementado y versionado — `certifi` declarado en
+   `requirements.txt` y procedimiento documentado (paso 1b del checklist de Windows), con
+   la verificación SSL **activada**. Queda una acción manual de 1 minuto en la PC Windows
+   (actualizar `certifi` y borrar el `sitecustomize.py`); los resultados ya obtenidos son
+   válidos, así que no bloquea nada.
+
+**Único pendiente operativo (no bloqueante):** correr en la PC Windows el `pip install
+--upgrade certifi` y eliminar el `sitecustomize.py`, para que la reproducibilidad en Windows
+también sea limpia desde el repositorio. Nada bloquea continuar con el EDA formal de Fase 2.
