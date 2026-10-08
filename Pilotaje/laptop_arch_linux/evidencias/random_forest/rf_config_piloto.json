@@ -1,0 +1,7 @@
+{
+  "modelo": "RandomForestClassifier",
+  "hiperparametros": "por defecto de scikit-learn (sin tuning) + random_state=42",
+  "nota": "Sin tuning de Optuna a propósito -- eso corresponde a Fase 4 (Protocolo v2.1 S11 P07). Esta corrida solo confirma que el pipeline funciona con un segundo algoritmo.",
+  "smote": true,
+  "seed": 42
+}

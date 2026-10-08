@@ -27,3 +27,6 @@ shap
 # Entorno de notebooks
 jupyter
 ipykernel
+
+# Captura de entorno y recursos (Pilotaje, P16 del protocolo)
+psutil

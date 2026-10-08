@@ -4,9 +4,9 @@ Mapeo entre fases del cronograma (`Trabajos del Curso/Cronograma Tesis II...`), 
 
 | Fase | Semana | Entregable | Carpeta en el repo | Estado |
 |---|---|---|---|---|
-| 1. Planificación | 2 | Protocolo de investigación v1 | `DOCUMENTOS ELABORADOS DE LA TESIS/Protocolo de Investigacion v1.md` (local, no versionado) | ✅ Cerrado, confirmado por asesora |
+| 1. Planificación | 2 | Protocolo de investigación v2.1 (protocolo experimental §11 + matriz de trazabilidad §12) | `DOCUMENTOS ELABORADOS DE LA TESIS/Protocolo de Investigacion v2.1.md` (local, no versionado) | ✅ Cerrado — P08 y P13 resueltos por criterio propio (sin asesora en Seminario de Tesis II), fundamentados en Dietterich 1998, Demšar 2006, Raschka 2018 |
 | 2. Adquisición | 3 | Dataset crudo verificado | `Laboratorio de Pruebas/Fase2_Adquisicion_Preparacion/` → genera `data/raw/dataset_crudo_uci697.csv` | 🔲 Pendiente de ejecutar |
-| 2. EDA | 3-4 | Informe EDA | `Laboratorio de Pruebas/Fase2_Adquisicion_Preparacion/01_Adquisicion_EDA.ipynb` | 🔲 Pendiente de ejecutar |
+| 2. EDA | 3-4 | Informe EDA + `dataset_metadata.csv` + `dataset_audit.csv` (Protocolo v2.1, P01-P02) | `Laboratorio de Pruebas/Fase2_Adquisicion_Preparacion/01_Adquisicion_EDA.ipynb` → genera `data/processed/` | 🔲 Piloto (P01-P03) en curso — ver `Pilotaje/` |
 | 2. Depuración | 4 | Dataset binario depurado (3,630 registros) | `Laboratorio de Pruebas/Fase2_Adquisicion_Preparacion/` → genera `data/processed/` | ⬜ No iniciado |
 | 3. Partición | 5 | Dataset experimental congelado | `Laboratorio de Pruebas/Fase3_Preprocesamiento/` | ⬜ No iniciado |
 | 3. Preprocesamiento | 6 | Pipeline de preprocesamiento reproducible | `Laboratorio de Pruebas/Fase3_Preprocesamiento/` | ⬜ No iniciado |

@@ -1,0 +1,2 @@
+n_registros_totales,n_variables_predictoras,clases_encontradas,discrepancia_registros,discrepancia_variables,filas_duplicadas,student_id_unicos_ok,variables_con_faltantes,total_valores_faltantes,dropout_pct,graduate_pct,enrolled_pct,distribucion_coincide_con_protocolo_v2,variables_con_mas_de_5_outliers_iqr
+4424,36,"Dropout, Enrolled, Graduate",False,True,0,True,0,0,32.12,49.93,17.95,True,28

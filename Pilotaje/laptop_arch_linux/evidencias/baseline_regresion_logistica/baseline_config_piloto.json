@@ -1,0 +1,9 @@
+{
+  "modelo": "LogisticRegression",
+  "hiperparametros": {
+    "max_iter": 1000,
+    "random_state": 42
+  },
+  "smote": true,
+  "seed": 42
+}
