@@ -335,31 +335,34 @@ Al correr `01_Adquisicion_EDA.ipynb` en la PC de escritorio (Windows 10, Python 
 la descarga vía `ucimlrepo` falló con `SSL: CERTIFICATE_VERIFY_FAILED`. **Tipo:** técnica
 (de infraestructura, no del protocolo ni del código). **Evidencia:** `comparacion_entornos.md`.
 
-**Causa raíz:** `ucimlrepo` descarga con
-`urllib.request.urlopen(..., context=ssl.create_default_context(cafile=certifi.where()))`
-— es decir, **ya valida el certificado usando el *bundle* de `certifi`**. El fallo ocurrió
-porque ese *bundle* de `certifi` estaba **desactualizado** en la instalación de Windows
-(no traía la CA del servidor de UCI). No es un problema del protocolo ni del código del proyecto.
+**Causa raíz (confirmada leyendo el código de `ucimlrepo`, ver
+`escritorio_windows10/resolucion_INC-04_detalle.md`):** la librería hace **dos** peticiones
+HTTPS distintas, y solo una usa `certifi`:
+- **Metadata (JSON):** `urllib.request.urlopen(..., context=ssl.create_default_context(cafile=certifi.where()))`
+  → valida con `certifi` → **funcionó**.
+- **Datos (CSV):** `pandas.read_csv(data_url)` (línea 97 de `fetch.py`) → pandas delega en
+  `urllib` con el **contexto por defecto**, que en Windows usa el **almacén de certificados
+  del sistema operativo** (no `certifi`). Ese almacén estaba desactualizado → `CERTIFICATE_VERIFY_FAILED`.
 
-**Cómo se abordó (workaround de infraestructura):** se creó un `sitecustomize.py` dentro
-del `.venv` que fuerza `ssl._create_unverified_context()` para todo el entorno, evitando
-tocar los notebooks oficiales. Permitió completar la descarga.
+No es un problema del protocolo ni del código del proyecto.
 
-**Limitaciones de ese workaround (declaradas con honestidad):**
-- Desactiva la verificación de certificados en *todo* el entorno; es aceptable para una
-  descarga puntual de un dataset público, pero **no es una práctica recomendable** como
-  solución permanente.
-- El `sitecustomize.py` vive dentro de `.venv/`, que **no se versiona** (`.gitignore`);
-  por tanto el parche **no es reproducible** desde el repositorio: una clonación limpia en
-  otra máquina Windows volvería a encontrar el mismo error.
+**Primer manejo (descartado):** un `sitecustomize.py` dentro del `.venv` con
+`ssl._create_unverified_context()`, que desactivaba la verificación de *todo* el entorno.
+Funcionó, pero es inseguro, no versionado y no reproducible — se eliminó.
 
-**Fix correcto (implementado y versionado):** como la librería ya usa `certifi.where()`, basta
-**actualizar el *bundle*** con `pip install --upgrade certifi` — la descarga funciona **con la
-verificación SSL activada**, sin tocar notebooks. Se agregó `certifi` explícito a
-`requirements.txt` para dejar la dependencia versionada. Queda **una acción manual en la PC
-Windows** (correr el `upgrade` y borrar el `sitecustomize.py`), documentada en
-`escritorio_windows10/CHECKLIST_corrida_windows.md` (paso 1b). (`SSL_CERT_FILE` no aplica:
-el contexto fija `cafile=certifi.where()` e ignora esa variable.)
+**Fix correcto (implementado y VERIFICADO, con verificación SSL activada):** apuntar la
+variable `SSL_CERT_FILE` al *bundle* de `certifi` antes de ejecutar, de modo que el contexto
+por defecto de `urllib` (el que usa `pandas.read_csv`) también use `certifi`:
+
+```powershell
+$env:SSL_CERT_FILE = .venv\Scripts\python.exe -c "import certifi; print(certifi.where())"
+```
+
+Con esto la descarga completó **sin desactivar la verificación**, imprimiendo `(4424, 36)`.
+Se agregó además `certifi` a `requirements.txt`. Es un **paso de entorno** (no versionado en
+código): debe declararse en la terminal antes de lanzar Jupyter en una Windows con el almacén
+de CA desactualizado — documentado en `escritorio_windows10/CHECKLIST_corrida_windows.md`
+(paso 1b) y en `resolucion_INC-04_detalle.md`. **INC-04 cerrada.**
 
 **¿Afecta validez?** **No.** La verificación apagada no altera *qué* se descargó: el
 `dataset_audit.csv` del entorno Windows reportó las mismas 36 variables y 4,424 filas que
@@ -498,12 +501,13 @@ Las 12 preguntas de síntesis completas están en la Sección 9 de
    no de calidad.
 6. **¿Las métricas se pudieron aplicar?** Sí, sin problema, con las librerías estándar.
 7. **¿Riesgo de fuga/sesgo?** No detectado — SMOTE solo en train, verificado.
-8. **Qué definir mejor:** INC-01 e INC-02 ya resueltas (v2.2 + corrida Windows); queda
-   aplicar el fix versionable del certificado SSL (`certifi`, INC-04) antes de Fase 3.
+8. **Qué definir mejor:** las cuatro incidencias quedaron cerradas (INC-01/02 vía v2.2 +
+   paridad; INC-03 venv; INC-04 vía `SSL_CERT_FILE`→`certifi` con verificación activada).
 9. **Qué no debe cambiar:** la partición 70/15/15 con seed=42, y el recall de Dropout
    como criterio de desempate.
-10. **Qué preguntaría otra persona:** cómo reproducir la descarga en Windows sin el parche
-    SSL del venv (respuesta: aplicar `certifi`, INC-04); el resto es reproducible sin preguntas.
+10. **Qué preguntaría otra persona:** cómo reproducir la descarga en una Windows con CA
+    desactualizadas (respuesta: declarar `SSL_CERT_FILE`→`certifi` antes de Jupyter, INC-04);
+    el resto es reproducible sin preguntas.
 11. **Error que pudo haber comprometido la tesis si se detectaba después:** INC-02.
 12. **¿El cronograma sigue viable?** Sí, sin mover fechas; se agrega una micro-tarea
     antes de Fase 3.
@@ -525,12 +529,13 @@ precisamente el objetivo de un piloto, y las cerró.
 2. **INC-02:** ✅ cerrada — §5 corregido a 36 variables; **Protocolo v2.2 emitido**
    (= "V1.2" de la ficha).
 3. **INC-03:** ✅ resuelta en el momento (venv obligatorio en Arch Linux).
-4. **INC-04:** ✅ fix correcto implementado y versionado — `certifi` declarado en
-   `requirements.txt` y procedimiento documentado (paso 1b del checklist de Windows), con
-   la verificación SSL **activada**. Queda una acción manual de 1 minuto en la PC Windows
-   (actualizar `certifi` y borrar el `sitecustomize.py`); los resultados ya obtenidos son
-   válidos, así que no bloquea nada.
+4. **INC-04:** ✅ cerrada y **verificada** — se identificó la causa real (la descarga del
+   CSV vía `pandas.read_csv` usa el almacén de CA del SO, no `certifi`) y se resolvió
+   apuntando `SSL_CERT_FILE` al *bundle* de `certifi`, **con verificación SSL activada**
+   (descarga confirmada: `(4424, 36)`). Se eliminó el workaround inseguro. Detalle en
+   `escritorio_windows10/resolucion_INC-04_detalle.md`.
 
-**Único pendiente operativo (no bloqueante):** correr en la PC Windows el `pip install
---upgrade certifi` y eliminar el `sitecustomize.py`, para que la reproducibilidad en Windows
-también sea limpia desde el repositorio. Nada bloquea continuar con el EDA formal de Fase 2.
+Las cuatro incidencias quedan cerradas; no hay pendientes bloqueantes. El protocolo (v2.2)
+está listo para la ejecución sistemática de Fase 3 / Semana 5. Nota de reproducibilidad: en
+una Windows con el almacén de CA desactualizado, declarar `SSL_CERT_FILE` (→ `certifi`) en la
+terminal antes de lanzar Jupyter (paso 1b del checklist).

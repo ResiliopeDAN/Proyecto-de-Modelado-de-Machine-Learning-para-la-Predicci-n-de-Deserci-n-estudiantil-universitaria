@@ -20,15 +20,20 @@ Durante la ejecución en la PC de escritorio, surgieron retos técnicos que no s
 * **Limitaciones de este workaround (declaradas con honestidad):**
     * Desactiva la verificación de certificados en *todo* el entorno. Es aceptable para una descarga puntual de un dataset público, pero **no es una práctica recomendable** como solución permanente.
     * El `sitecustomize.py` vive dentro de `.venv/`, que **no se versiona** (`.gitignore`). Por tanto el parche **no es reproducible desde el repositorio**: una clonación limpia en otra máquina Windows volvería a encontrar el mismo error. Mover el parche al venv evita tocar los notebooks, pero **no lo convierte en "reproducibilidad limpia"** — al contrario, lo vuelve invisible y no versionado.
-* **Fix correcto (implementado, versionable):** `ucimlrepo` descarga con
-  `urllib.request.urlopen(..., context=ssl.create_default_context(cafile=certifi.where()))`,
-  es decir **ya usa `certifi` con la verificación SSL activada**. La causa raíz era un *bundle*
-  de `certifi` desactualizado. El fix correcto es simplemente **`pip install --upgrade certifi`**
-  (y borrar el `sitecustomize.py`), lo que resuelve la descarga **con verificación encendida**,
-  sin tocar notebooks. Se declaró `certifi` en `requirements.txt` para versionar esta
-  dependencia. (Nota: `SSL_CERT_FILE` **no aplica** aquí porque el contexto fija
-  `cafile=certifi.where()` e ignora esa variable.) Acción manual pendiente en la PC Windows:
-  correr el `upgrade` y eliminar el `sitecustomize.py` (ver `escritorio_windows10/CHECKLIST_corrida_windows.md`, paso 1b).
+* **Causa raíz (confirmada en el código de `ucimlrepo`):** la librería hace dos peticiones.
+  El **metadata (JSON)** sí usa `certifi` (`ssl.create_default_context(cafile=certifi.where())`)
+  y funcionó; pero los **datos (CSV)** se bajan con `pandas.read_csv(data_url)`, que delega en
+  `urllib` con el **contexto por defecto** → en Windows usa el **almacén de CA del sistema
+  operativo** (no `certifi`), que estaba desactualizado. Por eso actualizar solo `certifi` no
+  basta.
+* **Fix correcto (implementado y VERIFICADO, verificación SSL activada):** declarar
+  `SSL_CERT_FILE` apuntando al *bundle* de `certifi` antes de ejecutar, para que el contexto
+  por defecto de `urllib` (el que usa pandas) también use `certifi`:
+  `$env:SSL_CERT_FILE = .venv\Scripts\python.exe -c "import certifi; print(certifi.where())"`.
+  La descarga completó imprimiendo `(4424, 36)` **sin desactivar la verificación**. Se eliminó
+  el `sitecustomize.py` inseguro y se declaró `certifi` en `requirements.txt`. Es un paso de
+  entorno (no versionado en código): debe declararse en la terminal antes de lanzar Jupyter.
+  Detalle completo en `escritorio_windows10/resolucion_INC-04_detalle.md`.
 
 ## 3. Paridad de Resultados
 

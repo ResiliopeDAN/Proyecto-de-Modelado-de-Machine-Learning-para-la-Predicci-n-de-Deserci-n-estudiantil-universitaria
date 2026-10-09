@@ -49,28 +49,38 @@ pip freeze > Pilotaje\escritorio_windows10\requirements_lock.txt
 
 ## 1b. Fix del certificado SSL (INC-04) — el correcto, con verificación ACTIVADA
 
-`ucimlrepo` descarga con `urllib.request.urlopen(..., context=ssl.create_default_context(cafile=certifi.where()))`,
-es decir **ya usa `certifi` con verificación SSL encendida**. El error `CERTIFICATE_VERIFY_FAILED`
-que apareció en la primera corrida fue porque el *bundle* de `certifi` estaba desactualizado.
-El fix correcto es actualizarlo (NO desactivar la verificación):
+**Causa raíz (confirmada en `fetch.py` de `ucimlrepo`):** la librería hace dos peticiones:
+el **metadata (JSON)** sí usa `certifi` (`ssl.create_default_context(cafile=certifi.where())`,
+funciona), pero los **datos (CSV)** se bajan con `pandas.read_csv(data_url)`, que delega en
+`urllib` con el **contexto por defecto** → en Windows usa el **almacén de CA del sistema
+operativo**, no `certifi`. Si ese almacén está desactualizado, falla con
+`CERTIFICATE_VERIFY_FAILED`. Por eso **actualizar solo `certifi` no basta** y **desactivar
+la verificación es incorrecto**.
+
+**Fix correcto (verificado):** apuntar `SSL_CERT_FILE` al *bundle* de `certifi` **antes** de
+ejecutar o de lanzar Jupyter, para que el contexto por defecto de `urllib` (el que usa pandas)
+también use `certifi`, manteniendo la verificación activada:
 
 ```powershell
-pip install --upgrade certifi
+$env:SSL_CERT_FILE = .venv\Scripts\python.exe -c "import certifi; print(certifi.where())"
 ```
 
-- [ ] `certifi` actualizado a la última versión.
-- [ ] **Eliminar el workaround inseguro** si quedó de la corrida anterior:
-      borra `.venv\Lib\site-packages\sitecustomize.py` (desactivaba la verificación SSL de todo
-      el entorno). Con `certifi` al día ya no hace falta.
+- [ ] `SSL_CERT_FILE` declarado en la terminal (debe hacerse en cada sesión antes de Jupyter).
+- [ ] **Eliminar el workaround inseguro** si quedó de una corrida previa (desactivaba SSL en
+      todo el entorno):
 
 ```powershell
 Remove-Item ".venv\Lib\site-packages\sitecustomize.py" -ErrorAction SilentlyContinue
 ```
 
-> Nota: como el contexto fija `cafile=certifi.where()`, la variable `SSL_CERT_FILE` **no tiene
-> efecto** aquí — el único lever real es la versión de `certifi`. Si tras actualizar aún
-> fallara, la causa sería externa (reloj del sistema desfasado, o un antivirus/proxy que
-> intercepta TLS), no el proyecto.
+- [ ] Verificar que descarga con verificación activada (debe imprimir `(4424, 36)`):
+
+```powershell
+.venv\Scripts\python.exe -c "from ucimlrepo import fetch_ucirepo; d=fetch_ucirepo(id=697); print(d.data.features.shape)"
+```
+
+> Si tras declarar `SSL_CERT_FILE` aún fallara, la causa sería externa (reloj del sistema
+> desfasado, o un antivirus/proxy que intercepta TLS), no el proyecto.
 
 ## 2. Pre-vuelo de portabilidad (evita que un notebook reviente a mitad)
 

@@ -3,9 +3,10 @@
 
 # Adquisición y EDA (Fase 2)
 ucimlrepo
-# certifi: bundle de certificados CA que usa ucimlrepo (ssl.create_default_context(cafile=certifi.where())).
-# Se declara explícito y debe mantenerse actualizado para evitar el fallo SSL de INC-04 en Windows
-# (pip install --upgrade certifi) SIN desactivar la verificación.
+# certifi: bundle de certificados CA. ucimlrepo lo usa para el metadata (JSON), pero los datos
+# (CSV) se bajan con pandas.read_csv -> urllib con el almacen de CA del SO. En Windows con CA
+# desactualizadas, declarar SSL_CERT_FILE -> certifi.where() antes de ejecutar (INC-04), SIN
+# desactivar la verificacion. Ver Pilotaje/escritorio_windows10/resolucion_INC-04_detalle.md.
 certifi
 pandas
 numpy
