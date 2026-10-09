@@ -2,10 +2,18 @@
 
 Recorrido de los 4 notebooks que conforman el piloto, en orden de ejecución, con las
 imágenes reales generadas por cada uno. Complementa `Informe_Pilotaje_V1.md` (que es el
-documento narrativo A-G) con el detalle de "qué corrió y dónde queda la evidencia
+documento narrativo A-I) con el detalle de "qué corrió y dónde queda la evidencia
 visual". Todos ejecutados en `laptop_arch_linux`, 2026-10-04, **0 errores** en las
 4 notebooks (verificado programáticamente, revisando que ninguna celda tenga un output
-de tipo `error`).
+de tipo `error`), y **reproducidos en Windows 10** (2026-10-08) con paridad exacta de
+métricas (ver `comparacion_entornos.md`).
+
+> **Nota de estado (posterior a la ejecución).** Las descripciones por notebook de abajo
+> reflejan lo que cada notebook mostró el 2026-10-04 (p. ej. el semáforo interno 🟡 AMARILLO
+> de la sección 9 del notebook 01). El **estado final del piloto es 🟢 VERDE**: las
+> incidencias se cerraron (ver `Informe_Pilotaje_V1.md`, secciones E e I). En total fueron
+> **cuatro** incidencias: INC-01/02/03 en la corrida de la laptop e **INC-04** (SSL) en la
+> reproducción en Windows — todas cerradas.
 
 Ubicación de los notebooks:
 `Laboratorio de Pruebas/Fase2_Adquisicion_Preparacion/`
@@ -185,7 +193,9 @@ antes de ver el test.
 | P-09 | 04 | Reentrenar ambos modelos | 0.197s | OK |
 | P-10 | 04 | Evaluar sobre test + matrices | 0.335s | OK |
 
-**10/10 pasos en "OK", 0 incidencias técnicas durante la ejecución del código** (las 3
-incidencias del piloto — INC-01, INC-02, INC-03 — son de documentación/entorno, no
-fallas del pipeline en sí). Tiempo total medido de los pasos instrumentados: 0.852
+**10/10 pasos en "OK", 0 incidencias técnicas durante la ejecución del código en la laptop
+(Arch Linux)**. De las cuatro incidencias del piloto, INC-01/INC-02/INC-03 son de
+documentación/entorno (no fallas del pipeline), e INC-04 apareció en la reproducción en
+Windows (descarga SSL vía `pandas.read_csv`, resuelta con `SSL_CERT_FILE`→`certifi`; ver
+`comparacion_entornos.md`). Tiempo total medido de los pasos instrumentados: 0.852
 segundos — el pipeline completo, sobre la muestra piloto, es rápido incluso sin GPU.

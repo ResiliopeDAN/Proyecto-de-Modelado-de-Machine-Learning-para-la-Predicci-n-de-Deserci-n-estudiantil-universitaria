@@ -275,9 +275,37 @@ ventaja estructural sobre un modelo lineal en una muestra chica — la comparaci
 - **OE3** (SHAP) y **OE4** (protocolo de replicación UNAJ): fuera de alcance de este
   piloto, corresponden a Fase 6.
 
+### D.5 Evidencias visuales seleccionadas
+
+Figuras reales generadas por los notebooks (todas en `laptop_arch_linux/evidencias/`; el
+recorrido completo está en `Notebooks_Ejecutados.md`). Se seleccionan las que sostienen las
+decisiones metodológicas y los resultados del piloto.
+
+**Distribución de las clases originales** (notebook 01, P02) — motiva la exclusión de
+"Enrolled" y el uso de SMOTE + recall de *Dropout* como criterio (hay desbalance real):
+
+![Distribución de clases](laptop_arch_linux/evidencias/figuras/distribucion_clases.png)
+
+**Matriz de correlación entre variables numéricas** (notebook 01, EDA/OE1) — insumo para la
+futura selección de variables (OE1); no se detectan colinealidades que invaliden el pipeline:
+
+![Matriz de correlación](laptop_arch_linux/evidencias/figuras/matriz_correlacion.png)
+
+**Boxplots de outliers por variable** (notebook 01, P02) — 28 de 36 variables con >5 outliers
+IQR, a vigilar en Fase 3; ninguno es un problema de calidad que bloquee el piloto:
+
+![Outliers boxplots](laptop_arch_linux/evidencias/figuras/outliers_boxplots.png)
+
+**Matrices de confusión sobre test (P10, evaluación única)** — evidencia directa del resultado
+clave: el baseline detecta mejor a los que desertan (mayor recall de *Dropout*):
+
+| Regresión Logística (baseline) | Random Forest (sin tuning) |
+|---|---|
+| ![Matriz de confusión — Regresión Logística](laptop_arch_linux/evidencias/baseline_regresion_logistica/matriz_confusion_test.png) | ![Matriz de confusión — Random Forest](laptop_arch_linux/evidencias/random_forest/matriz_confusion_test.png) |
+
 ---
 
-## E. Incidencias y análisis
+## E. Incidencias y análisis (Etapa C de la ficha)
 
 Cuatro incidencias reales, encontradas al ejecutar (no al redactar), registradas en
 `incidencias_log.csv`. Las tres primeras surgieron en la corrida de la laptop (Arch Linux);
@@ -485,8 +513,8 @@ piloto **cierra en 🟢 VERDE**: el flujo se ejecutó, la evidencia es utilizabl
 y el protocolo queda listo para la ejecución sistemática de Semana 5. Nunca estuvo en rojo:
 ninguna incidencia impidió continuar.
 
-Las 12 preguntas de síntesis completas están en la Sección 9 de
-`01_Adquisicion_EDA.ipynb` (reproducidas aquí de forma resumida):
+**Preguntas de retroalimentación (Etapa E de la ficha).** Las 12 preguntas completas están
+en la Sección 9 de `01_Adquisicion_EDA.ipynb` (reproducidas aquí de forma resumida):
 
 1. **Qué funcionó:** integridad del dataset, distribución de clases, unicidad de
    `student_id` — todo verificado contra lo documentado.
@@ -511,6 +539,17 @@ Las 12 preguntas de síntesis completas están en la Sección 9 de
 11. **Error que pudo haber comprometido la tesis si se detectaba después:** INC-02.
 12. **¿El cronograma sigue viable?** Sí, sin mover fechas; se agrega una micro-tarea
     antes de Fase 3.
+
+### Síntesis — ¿qué aprendí de mi investigación? (sección 10 de la ficha)
+
+| Complete | Respuesta |
+|---|---|
+| La principal **fortaleza** comprobada fue… | Que el protocolo es **ejecutable de punta a punta y reproducible en dos entornos** (Arch Linux y Windows 10) con paridad **exacta** de métricas, y con cada resultado trazable hasta su dato, código y configuración (Etapa D). |
+| La principal **debilidad** encontrada fue… | Que la **ficha técnica documentada no coincidía con la realidad**: el §5 declaraba 35 variables cuando el dataset trae 36 (INC-02), y el §10 solo preveía Windows (INC-01). |
+| La **amenaza** más importante para la validez es… | Haber ejecutado la tesis completa sobre una **ficha errónea de 35 variables** sin pilotear: se habría detectado tarde, posiblemente en la defensa. El piloto la neutralizó a tiempo (INC-02). |
+| La **corrección prioritaria** antes de Semana 5 es… | Ya aplicada: **Protocolo v2.2** (§5→36, §10→ambos entornos). Único cabo operativo no bloqueante: declarar `SSL_CERT_FILE`→`certifi` en Windows (INC-04, ya resuelto y verificado). |
+| La **evidencia que demuestra que puedo continuar** es… | Bitácora **10/10 OK**, métricas coherentes con la literatura del dataset, **paridad multiplataforma** confirmada, trazabilidad reconstruible y semáforo **🟢 VERDE**. |
+| Antes de ejecutar **a escala completa** todavía debo… | Ejecutar la partición oficial **70/15/15 sobre el dataset completo** (Fase 3) y correr los **4 modelos con tuning** de Optuna (Fase 4) — nada de esto es parte del piloto. |
 
 ---
 
